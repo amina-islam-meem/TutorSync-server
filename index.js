@@ -49,7 +49,29 @@ async function run() {
 
     //fetch tutors data from database and send to client side
     app.get('/tutors', async (req, res) => {
-      const result =await tutorsCollection.find().toArray()
+      const { search, startDate, endDate } = req.query;
+      let query = {};
+     //search by tutor name
+      if (search) {
+          query.name = { $regex: search, $options: "i" };
+       }
+      
+       //date filtering for available tutors
+       if (startDate) {
+      query.startDate = {
+      ...query.startDate,
+      $gte: startDate,
+    };
+    }
+
+    if (endDate) {
+    query.startDate = {
+      ...query.startDate,
+      $lte: endDate,
+    };
+  }
+
+      const result =await tutorsCollection.find(query).toArray()
           res.json(result);
     });
 
