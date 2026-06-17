@@ -2,7 +2,7 @@ const express = require('express');
 const dotenv = require("dotenv");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion,ObjectId } = require('mongodb');
-const { createRemoteJWKSet, jwtVerify } = require("jose");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 
 dotenv.config();
 const uri =process.env.MONGODB_URI;
@@ -49,7 +49,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     
-    await client.connect();
+    //await client.connect();
 
     const db = client.db("tutorsync");
     const tutorsCollection = db.collection("tutors");
@@ -233,7 +233,7 @@ app.delete("/tutors/:id", async (req, res) => {
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    //await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
        
