@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require("dotenv");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion,ObjectId } = require('mongodb');
+const { createRemoteJWKSet, jwtVerify } = require("jose");
 
 dotenv.config();
 const uri =process.env.MONGODB_URI;
@@ -10,6 +11,30 @@ const port = process.env.PORT;
 
 app.use(cors());
 app.use(express.json());
+
+//middleware for verify jwt token
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
+);
+
+const verifyToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    req.user = payload;
+
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+};
 
 
 
@@ -45,7 +70,6 @@ async function run() {
           res.json(result);
 
     });
-
 
     //fetch tutors data from database and send to client side
     app.get('/tutors', async (req, res) => {
@@ -84,8 +108,9 @@ async function run() {
 
 
     //details page for each tutor
-    app.get("/tutors/:id", async (req, res) => {
+    app.get("/tutors/:id",verifyToken, async (req, res) => {
      const { id } = req.params;
+     console.log(req.user);
 
       const tutor = await tutorsCollection.findOne({
         _id: new ObjectId(id),
@@ -135,7 +160,7 @@ async function run() {
     });
 
   } catch (error) {
-    console.log(error); //  add this for debugging
+    console.log(error); 
     res.status(500).json({
       message: "Booking failed ",
     });
@@ -175,14 +200,14 @@ app.patch("/bookings/:id", async (req, res) => {
   const { userId } = req.params;
 
   const result = await tutorsCollection
-    .find({ userId: userId })
+    .find({ userId })
     .toArray();
 
   res.json(result);
 });
 
 //update tutor information
-app.patch("/tutors/:id", async (req, res) => {
+app.patch("/tutors/:id",async (req, res) => {
   const { id } = req.params;
   const updatedData = req.body;
 
@@ -204,6 +229,8 @@ app.delete("/tutors/:id", async (req, res) => {
   await tutorsCollection.deleteOne({ _id: new ObjectId(id) });
   res.json({ message: "Tutor deleted successfully" });
 });
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
