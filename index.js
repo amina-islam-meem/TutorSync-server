@@ -9,7 +9,14 @@ const uri =process.env.MONGODB_URI;
 const app = express();
 const port = process.env.PORT;
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://tutorsync-omega.vercel.app"
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 //middleware for verify jwt token
